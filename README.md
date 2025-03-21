@@ -27,13 +27,16 @@ This project implements a simple concurrent money transfer system in Go. It ensu
 2. The application supports 2 endpoints:
     GET /userInfo?userName=XXX
     This endpoint takes userName in the query parameter and responds with
-    {"user_name" :"Adam","account_id":"XXXXX","current_balance" : 0}
+    ```
+     {"user_name" :"Adam","account_id":"XXXXX","current_balance" : 0}
 
     POST /transfer
     This endpoint takes a body
-    {"from" : "Mark", "to" : "Adam", "Amount" : 12}
+    ```
+     {"from" : "Mark", "to" : "Adam", "Amount" : 12}
     If the transaction goes welll the endpoint responds with
-    {"message":"accound Id : 3b5f116d-42a5-49dd-b66f-c30b4e1abe96 has been debited with ammount 1; updated balance is 99","previous_balance":100,"updated_balance":99}
+    ```
+     {"message":"accound Id : 3b5f116d-42a5-49dd-b66f-c30b4e1abe96 has been debited with ammount 1; updated balance is 99","previous_balance":100,"updated_balance":99}
 3. To run the tests:
    ```
     cd /bank
