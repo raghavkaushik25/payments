@@ -54,7 +54,7 @@ func (b *bank) UserInfo(rw http.ResponseWriter, req *http.Request) {
 	userName := qV["userName"][0]
 	if userName == "" {
 		rw.WriteHeader(400)
-		rw.Write([]byte("missing query parameter"))
+		rw.Write([]byte("missing userName is queryParameter"))
 		return
 	}
 	u, err := b.getUser(userName)
@@ -69,6 +69,7 @@ func (b *bank) UserInfo(rw http.ResponseWriter, req *http.Request) {
 		CurrentBalance: u.accountInfo.currentBalance,
 	}
 	body, _ := json.Marshal(respBody)
+	rw.WriteHeader(200)
 	rw.Write(body)
 }
 
