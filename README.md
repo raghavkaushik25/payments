@@ -30,11 +30,16 @@ This project implements a simple concurrent money transfer system in Go. It ensu
     This endpoint takes userName in the query parameter and responds with
     ```
      {"user_name" :"Adam","account_id":"XXXXX","current_balance" : 0}
+     curl --location 'http://localhost:8080/userInfo?userName=Adam'
+
    ```
     - POST /transfer
     This endpoint takes a body
     ```
      {"from" : "Mark", "to" : "Adam", "Amount" : 12}
+     curl --location 'http://localhost:8080/transfer' \
+        --header 'Content-Type: application/json' \
+        --data '{"from" : "Mark","to" : "Adam","Amount" : 3}'
     ```
     If the transaction goes welll the endpoint responds with
     ```
