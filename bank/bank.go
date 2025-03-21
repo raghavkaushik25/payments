@@ -12,6 +12,7 @@ type Bank interface {
 }
 
 type bank struct {
+	// Holds the registered/onboarded users in map.
 	registeredUsers map[string]*user
 }
 
@@ -29,8 +30,9 @@ func (b *bank) RegisterHandlers() {
 	http.HandleFunc("/transfer", b.Transfer)
 }
 
+// A private method on bank class; It only supports read only operation on the registeredUsers
+// If we were doing conuccurent writes to this map we would either use a sync.Map or and mutex to the current implementaion.
 func (b *bank) getUser(userName string) (*user, error) {
-	//var currentUser *user
 	currentUser, ok := b.registeredUsers[userName]
 	if !ok {
 		return nil, fmt.Errorf("user name %v is not a valid user", userName)
@@ -38,6 +40,7 @@ func (b *bank) getUser(userName string) (*user, error) {
 	return currentUser, nil
 }
 
+// simple GET method to get user's basic info
 func (b *bank) UserInfo(rw http.ResponseWriter, req *http.Request) {
 	rw.Header().Set("Content-Type", "application/json")
 	if req.Method != "GET" {
@@ -73,6 +76,11 @@ func (b *bank) UserInfo(rw http.ResponseWriter, req *http.Request) {
 	rw.Write(body)
 }
 
+// simple POST method to handle transaction requests.
+// the locking strategy is pessimistic; It uses Mutexes to lock the sender first and then the receiver
+// It ensures that only one thread can access the account information
+// of the users involved. This is done to maintain integrety and consistency in the system. Optimistic locking would require
+// more calls to getUser to verify the systems state before making an actual update.
 func (b *bank) Transfer(rw http.ResponseWriter, req *http.Request) {
 	if req.Method != "POST" {
 		rw.WriteHeader(429)
