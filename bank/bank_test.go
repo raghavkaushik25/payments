@@ -114,3 +114,60 @@ func TestTransfer(t *testing.T) {
 		})
 	}
 }
+
+// Tests transactions going to the same account concurrently.
+func TestConcurrentTransfer(t *testing.T) {
+	um := NewUserManager()
+	oI := OnboartingInfo()
+	ru := um.OnboardUsers(oI)
+	b := bank{
+		registeredUsers: ru,
+	}
+	type tests struct {
+		name string
+		tr   *TransferRequest
+	}
+	tcs := []tests{
+		{
+			name: "fromMarkToAdam#1",
+			tr: &TransferRequest{
+				From:   "Mark",
+				To:     "Adam",
+				Amount: 10,
+			},
+		},
+		{
+			name: "fromJaneToAdam#1",
+			tr: &TransferRequest{
+				From:   "Jane",
+				To:     "Adam",
+				Amount: 10,
+			},
+		},
+	}
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			rw := httptest.NewRecorder()
+			by, _ := json.Marshal(tc.tr)
+			reader := bytes.NewReader(by)
+			req := httptest.NewRequest("POST", "http://localhost:8080/transfer", reader)
+			req.Header.Set("Content-Type", "application/json")
+			b.Transfer(rw, req)
+			r, _ := io.ReadAll(rw.Body)
+			response := &TransferResponse{}
+			json.Unmarshal(r, response)
+		})
+	}
+	t.Cleanup(func() {
+		newBalanceMark, ok := b.registeredUsers["Mark"]
+		assert.Equal(t, ok, true)
+		assert.Equal(t, 90, newBalanceMark.accountInfo.currentBalance)
+		newBalanceAdam, ok := b.registeredUsers["Adam"]
+		assert.Equal(t, ok, true)
+		assert.Equal(t, 20, newBalanceAdam.accountInfo.currentBalance)
+		newBalanceJane, ok := b.registeredUsers["Jane"]
+		assert.Equal(t, ok, true)
+		assert.Equal(t, 40, newBalanceJane.accountInfo.currentBalance)
+	})
+}
