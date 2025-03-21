@@ -1,12 +1,15 @@
 package bank
 
 import (
+	"sync"
+
 	"github.com/google/uuid"
 )
 
 type Unlock func()
 
 type account struct {
+	l              sync.Mutex
 	accountId      string
 	currentBalance int
 	openingBalance int

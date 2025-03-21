@@ -26,6 +26,7 @@ func NewBank() Bank {
 
 func (b *bank) RegisterHandlers() {
 	http.HandleFunc("/userInfo", b.UserInfo)
+	http.HandleFunc("/transfer", b.Transfer)
 }
 
 func (b *bank) getUser(userName string) (*user, error) {
@@ -69,4 +70,55 @@ func (b *bank) UserInfo(rw http.ResponseWriter, req *http.Request) {
 	}
 	body, _ := json.Marshal(respBody)
 	rw.Write(body)
+}
+
+func (b *bank) Transfer(rw http.ResponseWriter, req *http.Request) {
+	if req.Method != "POST" {
+		rw.WriteHeader(429)
+		rw.Write([]byte("invalid method"))
+		return
+	}
+	rw.Header().Set("Content-Type", "application/json")
+	transfer := &TransferRequest{}
+	transferBody := &TransferResponse{}
+	err := json.NewDecoder(req.Body).Decode(transfer)
+	if err != nil {
+		rw.WriteHeader(500)
+		rw.Write([]byte(fmt.Sprintf("internal server error %v", err)))
+		return
+	}
+
+	from, err := b.getUser(transfer.From)
+	if err != nil {
+		rw.WriteHeader(400)
+		rw.Write([]byte(err.Error()))
+		return
+	}
+	from.accountInfo.l.Lock()
+	defer from.accountInfo.l.Unlock()
+	to, err := b.getUser(transfer.To)
+	if err != nil {
+		rw.WriteHeader(400)
+		rw.Write([]byte(err.Error()))
+		return
+	}
+	to.accountInfo.l.Lock()
+	defer to.accountInfo.l.Unlock()
+	if transfer.Amount > from.accountInfo.currentBalance {
+		rw.WriteHeader(400)
+		rw.Write([]byte(fmt.Sprintf("insufficient balance %v", from.accountInfo.currentBalance)))
+		return
+	}
+	if from.accountInfo.accountId == to.accountInfo.accountId {
+		rw.WriteHeader(400)
+		rw.Write([]byte(fmt.Sprintf("cannot transfer to the same account %v", from.accountInfo.accountId)))
+		return
+	}
+	transferBody.PreviousBalance = from.accountInfo.currentBalance
+	from.accountInfo.currentBalance -= transfer.Amount
+	to.accountInfo.currentBalance += +transfer.Amount
+	transferBody.UpdatedBalance = from.accountInfo.currentBalance
+	transferBody.Message = fmt.Sprintf("accound Id : %v has been debited with ammount %v; updated balance is %v", from.accountInfo.accountId, transfer.Amount, from.accountInfo.currentBalance)
+	rw.WriteHeader(200)
+	json.NewEncoder(rw).Encode(transferBody)
 }
