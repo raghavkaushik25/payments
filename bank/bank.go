@@ -64,7 +64,7 @@ func (b *bank) UserInfo(rw http.ResponseWriter, req *http.Request) {
 	}
 	respBody := &UserResponse{
 		UserName:       u.userName,
-		AccountId:      u.userId,
+		AccountId:      u.accountInfo.accountId,
 		CurrentBalance: u.accountInfo.currentBalance,
 	}
 	body, _ := json.Marshal(respBody)
